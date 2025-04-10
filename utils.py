@@ -12,8 +12,8 @@ email = os.getenv("EMAIL")
 api_token = os.getenv("API_TOKEN")
 auth = (f'{email}/token', api_token)
 
-full_json_export_error = 'MaximumCommentsSizeExceeded'
-redacted_file_name = 'redacted.txt'
+FULL_JSON_EXPORT_ERROR = 'MaximumCommentsSizeExceeded'
+REDACTED_FILE_NAME = 'redacted.txt'
 tickets_with_attachments = []
 tickets_to_reprocess = []
 
@@ -160,13 +160,13 @@ def find_attachments_to_be_redacted(tickets):
                     }
                     # Store all attachment IDs
                     for attachment in comment["attachments"]:
-                        if redacted_file_name not in attachment["file_name"]:
+                        if REDACTED_FILE_NAME not in attachment["file_name"]:
                             comment_data["attachmentIds"].append(attachment["id"])
 
                     if len(comment_data["attachmentIds"]) > 0:
                         ticket_data["comments"].append(comment_data)
                 
-                elif "error" in comment and comment["error"] == full_json_export_error:
+                elif "error" in comment and comment["error"] == FULL_JSON_EXPORT_ERROR:
                     tickets_to_reprocess.append(ticket["id"])
         
         if len(ticket_data["comments"]) > 0:
