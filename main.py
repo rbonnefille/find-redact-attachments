@@ -1,28 +1,36 @@
-import os
 import json
-import sys
 import argparse
-import time
-from utils import format_ndjson, delay, store_results_to_file, find_attachments_to_be_redacted, tickets_with_attachments, redact_attachment
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from utils import (
+    format_ndjson, find_attachments_to_be_redacted, 
+    tickets_with_attachments, redact_attachment
+)
 
 # Set up command-line arguments
-parser = argparse.ArgumentParser(description='Script to find and redact attachments in Zendesk tickets')
-parser.add_argument('-i', '--input', required=True, help='path to the input file')
+parser = argparse.ArgumentParser(
+    description='Script to find and redact attachments in Zendesk tickets'
+)
+parser.add_argument(
+    '-i', '--input', required=True, 
+    help='path to the input file containing NDJSON data'
+)
 args = parser.parse_args()
 
 # Get the input file path
-input_file_path = args.input
-output_file_path = 'reformatted-tickets.json'
+INPUT_FILE_PATH = args.input
+OUTPUT_FILE_PATH = 'reformatted-tickets.json'
 
 # Format the NDJSON file into a standard JSON array
-format_ndjson(input_file_path, output_file_path)
+format_ndjson(INPUT_FILE_PATH, OUTPUT_FILE_PATH)
 
 # Read the formatted JSON file
-with open(output_file_path, 'r', encoding='utf-8') as f:
+with open(OUTPUT_FILE_PATH, 'r', encoding='utf-8') as f:
     tickets = json.load(f)
 
 def main():
+    """
+    Main function to find and redact attachments in Zendesk tickets.
+    """
     # Find attachments that need to be redacted
     find_attachments_to_be_redacted(tickets)
 
