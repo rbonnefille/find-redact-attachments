@@ -52,7 +52,6 @@ def request_with_rate_limit(url, headers, method, data=None):
         else:
             print(f"Request failed: {e}")
             raise
-
     except Exception as e:
         print(f"Request failed: {e}")
         raise
