@@ -45,7 +45,7 @@ def request_with_rate_limit(url, headers, method, data=None):
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 429:
-            seconds_to_wait = int(e.response.headers.get('Retry-After', 60))
+            seconds_to_wait = 60 - rate_limit_reset + 1
             print(f"Rate limited. Waiting for {seconds_to_wait} seconds...")
             time.sleep(seconds_to_wait)
             return request_with_rate_limit(url, headers, method, data)
