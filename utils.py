@@ -117,8 +117,8 @@ def format_ndjson(input_file_path, output_file_path):
             sys.exit(1)
             
         # Read the file
-        with open(input_file_path, 'r', encoding='utf-8') as f:
-            file_content = f.read()
+        with open(input_file_path, 'r', encoding='utf-8') as input_file:
+            file_content = input_file.read()
         
         # Split the content into lines (each line is a JSON object in NDJSON format)
         ticket_objects = [line for line in file_content.split('\n') if line.strip() != '']
@@ -127,8 +127,8 @@ def format_ndjson(input_file_path, output_file_path):
         parsed_objects = [json.loads(line) for line in ticket_objects]
         
         # Write the array of JSON objects to a new file
-        with open(output_file_path, 'w', encoding='utf-8') as f:
-            json.dump(parsed_objects, f, indent=2)
+        with open(output_file_path, 'w', encoding='utf-8') as output_file:
+            json.dump(parsed_objects, output_file, indent=2)
             
         print(f"Reformatted file saved to: {output_file_path}")
     except Exception as error:
