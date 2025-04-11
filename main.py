@@ -71,4 +71,4 @@ if __name__ == '__main__':
     start_time = timeit.default_timer()
     main()
     elapsed_time = timeit.default_timer() - start_time
-    print(f'Total execution time: {elapsed_time:.2f} seconds, redacted {len(tickets_with_attachments)} attachments')
+    print(f'Total execution time: {elapsed_time:.2f} seconds, redacted {len(tickets_with_attachments)} tickets')
