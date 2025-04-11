@@ -51,7 +51,7 @@ python3 main.py --input <path_to_directory>
 
 ### Arguments:
 
-- `--input-dir`: Path to the directory containing attachments.
+- `--input`: Path to the directory containing attachments.
 
 ## Example
 
