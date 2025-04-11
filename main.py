@@ -15,16 +15,13 @@ parser.add_argument(
     '-i', '--input', required=True, 
     help='path to the input file containing NDJSON data'
 )
-parser.add_argument(
-    '-m', '--max_workers', type=int, default=10, required=True,
-    help='number of threads to use for redaction (default: 10)'
-)
+
 args = parser.parse_args()
 
 # Get the input file path
 INPUT_FILE_PATH = args.input
 # Set the maximum number of workers for multithreading
-MAX_WORKERS = args.max_workers
+MAX_WORKERS = 5
 # Set output file path
 OUTPUT_FILE_PATH = 'reformatted-tickets.json'
 
@@ -66,11 +63,12 @@ def main():
                 future.result()  # Ensure any exceptions are raised
                 processed_attachments += 1
                 remaining_attachments = total_attachments - processed_attachments
-                print(f'Remaining attachments to process: {remaining_attachments}')
+                print(f'Remaining attachments to process: {remaining_attachments}/{total_attachments}')
             except Exception as e:
                 print(f'Error processing attachment: {e}')
   
 if __name__ == '__main__':
+    start_time = timeit.default_timer()
     main()
-    elapsed_time = timeit.timeit(main, number=1)
-    print(f'Total execution time: {elapsed_time:.2f} seconds')
+    elapsed_time = timeit.default_timer() - start_time
+    print(f'Total execution time: {elapsed_time:.2f} seconds, redacted {len(tickets_with_attachments)} attachments')
