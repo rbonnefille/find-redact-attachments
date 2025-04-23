@@ -1,4 +1,4 @@
-# Proof of Concpet - Find and Redact Attachments - Zendesk
+# Proof of Concept - Find and Redact Attachments - Zendesk
 
 This project provides a Python script to locate and redact sensitive information in attachments. It is designed to help users process files efficiently while ensuring data privacy.
 
