@@ -42,7 +42,7 @@ def main():
 
     # Count the total number of attachments to be processed
     total_attachments = sum(
-        len(comment["attachmentIds"]) 
+        len(comment["external_attachment_urls"]) 
         for ticket in tickets_with_attachments 
         for comment in ticket["comments"]
     )
