@@ -4,7 +4,7 @@ import timeit
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils import (
     format_ndjson, find_attachments_to_be_redacted, 
-    tickets_with_attachments, redact_attachment
+    tickets_with_attachments, redact_ticket_comment_aw
 )
 
 # Set up command-line arguments
@@ -21,7 +21,7 @@ args = parser.parse_args()
 # Get the input file path
 INPUT_FILE_PATH = args.input
 # Set the maximum number of workers for multithreading
-MAX_WORKERS = 5
+MAX_WORKERS = 10
 # Set output file path
 OUTPUT_FILE_PATH = 'reformatted-tickets.json'
 
@@ -55,8 +55,8 @@ def main():
             ticket_id = ticket["ticketId"]
             for comment in ticket["comments"]:
                 comment_id = comment["commentId"]
-                for attachment_id in comment["attachmentIds"]:
-                    futures.append(executor.submit(redact_attachment, ticket_id, comment_id, attachment_id))
+                for attachment_url in comment["external_attachment_urls"]:
+                    futures.append(executor.submit(redact_ticket_comment_aw, ticket_id=ticket_id, comment_id=comment_id, external_attachment_urls=[attachment_url],))
         
         for future in as_completed(futures):
             try:

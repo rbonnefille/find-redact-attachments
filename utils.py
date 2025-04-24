@@ -17,24 +17,28 @@ REDACTED_FILE_NAME = 'redacted.txt'
 tickets_with_attachments = []
 tickets_to_reprocess = []
 
-def request_with_rate_limit(url, headers, method, data=None):
+def request_with_rate_limit(url: str, headers: dict, method: str, data: dict = None) -> dict:
     token_username = f"{email}/token"
     auth = (token_username, api_token)
     
     try:
         response = requests.request(method, url, json=data, auth=auth, headers=headers)
         response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        print()
+        rate_limit = response.headers['X-Rate-Limit']
+        rate_limit_remaining = response.headers['X-Rate-Limit-Remaining']
+        rate_limit_reset = response.headers['RateLimit-Reset']
 
-        rate_limit = response.headers.get('X-Rate-Limit')
-        rate_limit_remaining = response.headers.get('X-Rate-Limit-Remaining')
-        rate_limit_reset = response.headers.get('RateLimit-Reset')
-
-        if rate_limit:
-            print(f"Rate limit: {rate_limit}")
-        if rate_limit_remaining:
-            print(f"Rate limit remaining: {rate_limit_remaining}")
-        if rate_limit_reset:
-            print(f"Rate limit reset: {rate_limit_reset}")
+        print(
+                f"Rate limit: {rate_limit},"
+                f"Rate limit remaining: {rate_limit_remaining},"
+                f"Rate limit reset: {rate_limit_reset}"
+            )
+        if rate_limit and rate_limit_remaining and rate_limit_reset:
+            if int(rate_limit_remaining) <= 0.6 * int(rate_limit) and int(rate_limit_reset) >= 30:
+                sleep_time = min(int(rate_limit_reset) // 2, 15)  # Sleep for half the reset time, max 10 seconds
+                print(f"Pausing for {sleep_time} seconds to avoid hitting the rate limit...")
+                time.sleep(sleep_time)
 
         return {
             "response": response,  # Or response.text if the content is not JSON
@@ -45,7 +49,7 @@ def request_with_rate_limit(url, headers, method, data=None):
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 429:
-            seconds_to_wait = 60 - rate_limit_reset + 1
+            seconds_to_wait = 30
             print(f"Rate limited. Waiting for {seconds_to_wait} seconds...")
             time.sleep(seconds_to_wait)
             return request_with_rate_limit(url, headers, method, data)
@@ -56,30 +60,23 @@ def request_with_rate_limit(url, headers, method, data=None):
         print(f"Request failed: {e}")
         raise
 
-
-
-def redact_attachment(ticket_id, comment_id, attachment_id):
-    url = f"https://{subdomain}.zendesk.com/api/v2/tickets/{ticket_id}/comments/{comment_id}/attachments/{attachment_id}/redact"
+#works with all tickets status including closed/archived
+def redact_ticket_comment_aw(ticket_id: int, comment_id: int, external_attachment_urls: list):
+    url = f"https://{subdomain}.zendesk.com/api/v2/comment_redactions/{comment_id}"
     headers = {'Content-Type': 'application/json'}
+    body = {
+        "ticket_id": ticket_id,
+        "external_attachment_urls": external_attachment_urls
+    }
     try:
-        result = request_with_rate_limit(url, headers, "PUT")
+        result = request_with_rate_limit(url, headers, "PUT", data=body)
         response = result["response"].json()
-
-        print(f"Redaction successful: {response['attachment']['id']} was redacted")
-        print(
-            f"Rate limit: {result['rate_limit']}, "
-            f"Rate limit remaining: {result['rate_limit_remaining']}, "
-            f"Rate limit reset: {result['rate_limit_reset']}"
-        )
-        return {
-            "rate_limit_remaining": result["rate_limit_remaining"],
-            "rate_limit_reset": result["rate_limit_reset"],
-        }
+        print(f"Redaction successful: {response['comment']['id']} was redacted")
     except Exception as error:
         print(f"Error redacting attachment: {error}")
 
 
-def delay(ms):
+def delay(ms: int):
     """
     Delays execution for a given number of milliseconds.
     
@@ -88,7 +85,7 @@ def delay(ms):
     """
     time.sleep(ms / 1000)
 
-def store_results_to_file(filename, results):
+def store_results_to_file(filename: str, results: str) -> None:
     """
     Stores results to a file.
     
@@ -99,7 +96,7 @@ def store_results_to_file(filename, results):
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(results)
 
-def format_ndjson(input_file_path, output_file_path):
+def format_ndjson(input_file_path: str, output_file_path: str) -> None:
     """
     Formats a file containing NDJSON (Newline Delimited JSON) into a standard JSON array
     and writes it to a new file.
@@ -134,7 +131,7 @@ def format_ndjson(input_file_path, output_file_path):
     except Exception as error:
         print(f"Error processing the file: {str(error)}")
 
-def find_attachments_to_be_redacted(tickets):
+def find_attachments_to_be_redacted(tickets: list) -> None:
     """
     Processes a list of tickets to identify attachments that need to be redacted.
 
@@ -155,14 +152,14 @@ def find_attachments_to_be_redacted(tickets):
                 if "attachments" in comment and len(comment["attachments"]) > 0:
                     comment_data = {
                         "commentId": comment["id"],
-                        "attachmentIds": []
+                        "attachmentContentUrls": []
                     }
                     # Store all attachment IDs
                     for attachment in comment["attachments"]:
                         if REDACTED_FILE_NAME not in attachment["file_name"]:
-                            comment_data["attachmentIds"].append(attachment["id"])
+                            comment_data["attachmentContentUrls"].append(attachment["content_url"])
 
-                    if len(comment_data["attachmentIds"]) > 0:
+                    if len(comment_data["attachmentContentUrls"]) > 0:
                         ticket_data["comments"].append(comment_data)
                 
                 elif "error" in comment and comment["error"] == FULL_JSON_EXPORT_ERROR:
