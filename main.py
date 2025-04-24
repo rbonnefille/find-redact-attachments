@@ -42,7 +42,7 @@ def main():
 
     # Count the total number of attachments to be processed
     total_attachments = sum(
-        len(comment["external_attachment_urls"]) 
+        len(comment["attachmentContentUrls"]) 
         for ticket in tickets_with_attachments 
         for comment in ticket["comments"]
     )
@@ -55,7 +55,7 @@ def main():
             ticket_id = ticket["ticketId"]
             for comment in ticket["comments"]:
                 comment_id = comment["commentId"]
-                for attachment_url in comment["external_attachment_urls"]:
+                for attachment_url in comment["attachmentContentUrls"]:
                     futures.append(executor.submit(redact_ticket_comment_aw, ticket_id=ticket_id, comment_id=comment_id, external_attachment_urls=[attachment_url],))
         
         for future in as_completed(futures):
