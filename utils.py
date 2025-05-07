@@ -3,7 +3,10 @@ import json
 import time
 import sys
 import requests
+import logging
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -61,7 +64,7 @@ def request_with_rate_limit(url: str, headers: dict, method: str, data: dict = N
         raise
 
 #works with all tickets status including closed/archived
-def redact_ticket_comment_aw(ticket_id: int, comment_id: int, external_attachment_urls: list):
+def redact_ticket_comment_aw(ticket_id: int, comment_id: int, external_attachment_urls: list) -> None:
     url = f"https://{subdomain}.zendesk.com/api/v2/comment_redactions/{comment_id}"
     headers = {'Content-Type': 'application/json'}
     body = {
