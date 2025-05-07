@@ -1,11 +1,14 @@
 import json
 import argparse
 import timeit
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils import (
     format_ndjson, find_attachments_to_be_redacted, 
     tickets_with_attachments, redact_ticket_comment_aw
 )
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Set up command-line arguments
 parser = argparse.ArgumentParser(
@@ -35,10 +38,10 @@ def main():
     with open(OUTPUT_FILE_PATH, 'r', encoding='utf-8') as f:
         tickets = json.load(f)
     # Find attachments that need to be redacted
-    find_attachments_to_be_redacted(tickets)
+    find_attachments_to_be_redacted(tickets=tickets)
 
     # Redact attachments
-    print('Starting redaction process...')
+    logging.info('Starting redaction process...')
 
     # Count the total number of attachments to be processed
     total_attachments = sum(
@@ -63,12 +66,12 @@ def main():
                 future.result()  # Ensure any exceptions are raised
                 processed_attachments += 1
                 remaining_attachments = total_attachments - processed_attachments
-                print(f'Remaining attachments to process: {remaining_attachments}/{total_attachments}')
+                logging.info(f'Remaining attachments to process: {remaining_attachments}/{total_attachments}')
             except Exception as e:
-                print(f'Error processing attachment: {e}')
+                logging.error(f'Error processing attachment: {e}')
   
 if __name__ == '__main__':
     start_time = timeit.default_timer()
     main()
     elapsed_time = timeit.default_timer() - start_time
-    print(f'Total execution time: {elapsed_time:.2f} seconds, redacted {len(tickets_with_attachments)} tickets')
+    logging.info(f'Total execution time: {elapsed_time:.2f} seconds, redacted {len(tickets_with_attachments)} tickets')
