@@ -4,6 +4,7 @@ import time
 import sys
 import requests
 import logging
+from typing import Any
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ REDACTED_FILE_NAME = 'redacted.txt'
 tickets_with_attachments = []
 tickets_to_reprocess = []
 
-def request_with_rate_limit(url: str, headers: dict, method: str, data: dict = None) -> dict:
+def request_with_rate_limit(url: str, headers: dict, method: str, data: dict[Any, Any]) -> dict:
     token_username = f"{email}/token"
     auth = (token_username, api_token)
     
