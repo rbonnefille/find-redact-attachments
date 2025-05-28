@@ -4,10 +4,12 @@ import time
 import sys
 import requests
 import logging
+import timeit
 from typing import Any
 from dotenv import load_dotenv
 import json
 from pathlib import Path
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +23,18 @@ auth = (f'{email}/token', api_token)
 FULL_JSON_EXPORT_ERROR = 'MaximumCommentsSizeExceeded'
 REDACTED_FILE_NAME = 'redacted.txt'
 MERGED_NDJSON_FILE_NAME = 'merged_ndjson_files.json'
-tickets_with_attachments = []
+tickets_with_attachments: list = []
 tickets_to_reprocess = []
+
+def execution_duration(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = timeit.default_timer()
+        result = func(*args, **kwargs)
+        elapsed_time = timeit.default_timer() - start_time
+        logging.info(f"{func.__name__} completed in {elapsed_time:.2f} seconds")
+        return result
+    return wrapper
 
 def request_with_rate_limit(url: str, headers: dict, method: str, data: dict[Any, Any]) -> dict:
     token_username = f"{email}/token"
@@ -103,6 +115,7 @@ def store_results_to_file(filename: str, results: str) -> None:
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(results)
 
+@execution_duration
 def format_ndjson(input_file: str, output_file: str) -> None:
     """
     Formats a file containing NDJSON (Newline Delimited JSON) into a standard JSON array
@@ -185,6 +198,7 @@ def find_attachments_to_be_redacted(tickets: list) -> None:
     )
     store_results_to_file('ticketToReprocess.json', f"[{','.join(map(str, tickets_to_reprocess))}]")
 
+@execution_duration
 def merge_ndjson_files(directory_path, output_file=MERGED_NDJSON_FILE_NAME):
     """
     Merge all NDJSON files in a directory into a single NDJSON file.
@@ -211,7 +225,6 @@ def merge_ndjson_files(directory_path, output_file=MERGED_NDJSON_FILE_NAME):
     with open(output_file, 'w', encoding='utf-8') as output:
         for file_path in ndjson_files:
             print(f"Processing: {file_path.name}")
-            
             with open(file_path, 'r', encoding='utf-8') as input_file:
                 for line in input_file:
                     line = line.strip()
