@@ -6,6 +6,8 @@ import requests
 import logging
 from typing import Any
 from dotenv import load_dotenv
+import json
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +20,7 @@ auth = (f'{email}/token', api_token)
 
 FULL_JSON_EXPORT_ERROR = 'MaximumCommentsSizeExceeded'
 REDACTED_FILE_NAME = 'redacted.txt'
+MERGED_NDJSON_FILE_NAME = 'merged_ndjson_files.json'
 tickets_with_attachments = []
 tickets_to_reprocess = []
 
@@ -100,26 +103,26 @@ def store_results_to_file(filename: str, results: str) -> None:
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(results)
 
-def format_ndjson(input_file_path: str, output_file_path: str) -> None:
+def format_ndjson(input_file: str, output_file: str) -> None:
     """
     Formats a file containing NDJSON (Newline Delimited JSON) into a standard JSON array
     and writes it to a new file.
     
     Args:
-        input_file_path (str): The path to the input file containing NDJSON data
-        output_file_path (str): The path to the output file where the formatted JSON array will be saved
+        input_file (str): The path to the input file containing NDJSON data
+        output_file (str): The path to the output file where the formatted JSON array will be saved
         
     Raises:
         Error: If there is an issue reading the input file, parsing the NDJSON, or writing the output file
     """
     try:
-        if not os.path.exists(input_file_path):
-            print(f"Input file does not exist: {input_file_path}")
+        if not os.path.exists(input_file):
+            print(f"Input file does not exist: {input_file}")
             sys.exit(1)
             
         # Read the file
-        with open(input_file_path, 'r', encoding='utf-8') as input_file:
-            file_content = input_file.read()
+        with open(input_file, 'r', encoding='utf-8') as file:
+            file_content = file.read()
         
         # Split the content into lines (each line is a JSON object in NDJSON format)
         ticket_objects = [line for line in file_content.split('\n') if line.strip() != '']
@@ -128,10 +131,10 @@ def format_ndjson(input_file_path: str, output_file_path: str) -> None:
         parsed_objects = [json.loads(line) for line in ticket_objects]
         
         # Write the array of JSON objects to a new file
-        with open(output_file_path, 'w', encoding='utf-8') as output_file:
-            json.dump(parsed_objects, output_file, indent=2)
+        with open(output_file, 'w', encoding='utf-8') as output:
+            json.dump(parsed_objects, output, indent=2)
             
-        print(f"Reformatted file saved to: {output_file_path}")
+        print(f"Reformatted file saved to: {output_file}")
     except Exception as error:
         print(f"Error processing the file: {str(error)}")
 
@@ -181,3 +184,44 @@ def find_attachments_to_be_redacted(tickets: list) -> None:
         json.dumps(tickets_with_attachments, indent=2)
     )
     store_results_to_file('ticketToReprocess.json', f"[{','.join(map(str, tickets_to_reprocess))}]")
+
+def merge_ndjson_files(directory_path, output_file=MERGED_NDJSON_FILE_NAME):
+    """
+    Merge all NDJSON files in a directory into a single NDJSON file.
+    
+    Args:
+        directory_path (str): Path to directory containing NDJSON files
+        output_file (str): Name of the output merged file
+    """
+    directory = Path(directory_path)
+    
+    if not directory.exists():
+        raise FileNotFoundError(f"Directory {directory_path} does not exist")
+    
+    # Find all .ndjson files in the directory
+    ndjson_files = list(directory.glob('*.json'))
+    
+    if not ndjson_files:
+        print("No NDJSON files found in the directory")
+        return
+    
+    print(f"Found {len(ndjson_files)} NDJSON files to merge")
+    
+    # Merge files
+    with open(output_file, 'w', encoding='utf-8') as output:
+        for file_path in ndjson_files:
+            print(f"Processing: {file_path.name}")
+            
+            with open(file_path, 'r', encoding='utf-8') as input_file:
+                for line in input_file:
+                    line = line.strip()
+                    if line:  # Skip empty lines
+                        # Validate JSON line
+                        try:
+                            json.loads(line)
+                            output.write(line + '\n')
+                        except json.JSONDecodeError as e:
+                            print(f"Skipping invalid JSON line in {file_path.name}: {e}")
+    
+    print(f"Merged files saved to: {output_file}")
+    return output_file

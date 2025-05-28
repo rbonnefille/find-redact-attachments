@@ -5,7 +5,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils import (
     format_ndjson, find_attachments_to_be_redacted, 
-    tickets_with_attachments, redact_ticket_comment_aw
+    tickets_with_attachments, redact_ticket_comment_aw, merge_ndjson_files
 )
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -16,28 +16,30 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument(
     '-i', '--input', required=True, 
-    help='path to the input file containing NDJSON data'
+    help='path to the folder containing the NDJSON files from the Zendesk export'
 )
 
 args = parser.parse_args()
 
 # Get the input file path
-INPUT_FILE_PATH = args.input
+INPUT_FOLDER_PATH = args.input
 # Set the maximum number of workers for multithreading
 MAX_WORKERS = 10
 # Set output file path
-OUTPUT_FILE_PATH = 'reformatted-tickets.json'
+OUTPUT_FILE_NAME = 'reformatted-tickets.json'
 
 def main():
     """
     Main function to find and redact attachments in Zendesk tickets.
     """
+    # Merge ndjson files from the input directory
+    merged_ndjson_file = merge_ndjson_files(INPUT_FOLDER_PATH)
     # Format the NDJSON file into a standard JSON array
-    format_ndjson(INPUT_FILE_PATH, OUTPUT_FILE_PATH)
+    format_ndjson(input_file=merged_ndjson_file, output_file=OUTPUT_FILE_NAME)
    # Read the formatted JSON file
-    with open(OUTPUT_FILE_PATH, 'r', encoding='utf-8') as f:
+    with open(OUTPUT_FILE_NAME, 'r', encoding='utf-8') as f:
         tickets = json.load(f)
-    # Find attachments that need to be redacted
+    #Find attachments that need to be redacted
     find_attachments_to_be_redacted(tickets=tickets)
 
     # Redact attachments
