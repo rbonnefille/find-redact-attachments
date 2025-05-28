@@ -46,12 +46,14 @@ This project provides a Python script to locate and redact sensitive information
 Run the script with the following command:
 
 ```bash
-python3 main.py --input <path_to_directory>
+python3 main.py --input <path_to_JSON_file>
 ```
+
+#### Note: if you have more than one JSON file, you would need to run the script for each file separately. The script is not designed to handle multiple files at once.
 
 ### Arguments:
 
-- `--input`: Path to the directory containing attachments.
+- `--input`: Path to the JSON file containing ticket data.
 
 ## Example
 
