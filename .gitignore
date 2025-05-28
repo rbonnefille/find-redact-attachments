@@ -11,3 +11,5 @@ env.bak/
 venv.bak/
 *.json
 __pycache__/
+merged_ndjson_files.json
+.DS_Store
