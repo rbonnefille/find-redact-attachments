@@ -46,24 +46,22 @@ This project provides a Python script to locate and redact sensitive information
 Run the script with the following command:
 
 ```bash
-python3 main.py --input <path_to_JSON_file>
+python3 main.py --input <path_to_NDJSON_files>
 ```
-
-#### Note: if you have more than one JSON file, you would need to run the script for each file separately. The script is not designed to handle multiple files at once.
 
 ### Arguments:
 
-- `--input`: Path to the JSON file containing ticket data.
+- `--input`: Path to the folder containing the NDJSON files downloaded from Zendesk.
 
 ## Example
 
 ```bash
-python3 main.py --input ./ticketExport.json
+python3 main.py --input ./ticketExportFolder
 ```
 
 ### Options
 
-- you can edit the `main.py` file to change the `MAX_WORKERS` to more than `10` in case you want to increase the number of threads that will be used to process the attachments. **Be careful with this option, as it can lead to rate limiting from Zendesk**.
+- you can edit the `main.py` file to change the `MAX_WORKERS` to more than `5` in case you want to increase the number of threads that will be used to process the attachments. **Be careful with this option, as it can lead to rate limiting from Zendesk**.
 
 ## Once the script's execution is over
 
